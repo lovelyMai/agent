@@ -1,0 +1,6 @@
+# 系统
+.DS_Store
+
+# 项目
+node_modules
+dist

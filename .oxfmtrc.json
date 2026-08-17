@@ -1,0 +1,30 @@
+{
+  "tabWidth": 2,
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "sortImports": {
+    "newlinesBetween": false,
+    "groups": [
+      "value-builtin",
+      "value-external",
+      { "newlinesBetween": true },
+      "type-import",
+      "utils",
+      "services",
+      "unknown"
+    ],
+    "customGroups": [
+      {
+        "groupName": "utils",
+        "elementNamePattern": ["**/utils/**"],
+        "modifiers": ["value"]
+      },
+      {
+        "groupName": "services",
+        "elementNamePattern": ["**/services/**", "@map/shared/services/**"],
+        "modifiers": ["value"]
+      }
+    ]
+  }
+}
