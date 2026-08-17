@@ -68,7 +68,12 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           if (!executor) continue
           onEvent.value?.({ type: 'tool_start', toolCall })
           const args = JSON.parse(toolCall.function.arguments)
-          const result = await executor(args, environment.value)
+          let result: any
+          try {
+            result = await executor(args, environment.value)
+          } catch (error) {
+            result = error instanceof Error ? error.message : error
+          }
           messages.value.push({
             role: 'tool',
             content: JSON.stringify(result),
