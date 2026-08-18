@@ -6,14 +6,23 @@ import { streamOut } from './stream'
 import { generateTools, type Tool, type ToolDefinition } from './tool'
 
 export type AgentManager = {
+  /** 模型 */
   model: string
+  /** 消息数组 */
   messages: (ChatCompletionMessageParam & { [key: string]: any })[]
+  /** 最大迭代次数 */
   maxIteration: number
-  environment: Record<string, any>
+  /** 模型 API 额外配置 */
   config: Record<string, any>
+  /** 环境参数对象 */
+  environment: Record<string, any>
+  /** 事件回调 */
   onEvent?: (event: any) => void
+  /** 更新工具 */
   readonly updateTools: (tools: Tool[]) => void
+  /** 开始 */
   readonly start: () => Promise<void>
+  /** 结束 */
   readonly stop: () => void
 }
 export const createAgentManager = (client: OpenAI): AgentManager => {
