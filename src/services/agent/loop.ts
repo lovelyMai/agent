@@ -58,7 +58,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             tools: toolDefinitions.value,
             ...config.value,
           },
-          (text: string) => {
+          (text: { content?: string; reasoning_content?: string }) => {
             onEvent.value?.({ type: 'message_update', text })
           },
           isRunning,

@@ -16,16 +16,21 @@ export type Config = {
   [key: string]: any
 }
 
+type Delta = OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta & {
+  reasoning_content?: string | null
+}
+
 type Accumulated = {
   role: 'assistant'
-  content: string
+  content?: string
+  reasoning_content?: string
   tool_calls?: ChatCompletionMessageFunctionToolCall[]
 }
 
 export const streamOut = async (
   client: OpenAI,
   config: Config,
-  onChunk: (text: string) => void,
+  onChunk: (text: { content?: string; reasoning_content?: string }) => void,
   isRunning: Ref<boolean>,
 ): Promise<Accumulated> => {
   const response = await client.chat.completions.create({
@@ -37,6 +42,7 @@ export const streamOut = async (
   const accumulated: Accumulated = {
     role: 'assistant',
     content: '',
+    reasoning_content: '',
     tool_calls: [],
   }
 
@@ -45,11 +51,16 @@ export const streamOut = async (
       throw new Error('主动停止')
     }
 
-    const delta = chunk.choices[0]?.delta
+    const delta = chunk.choices[0]?.delta as Delta
 
     if (delta?.content) {
       accumulated.content += delta.content
-      onChunk?.(delta.content)
+      onChunk({ content: delta.content })
+    }
+
+    if (delta?.reasoning_content) {
+      accumulated.reasoning_content += delta.reasoning_content
+      onChunk({ reasoning_content: delta.reasoning_content })
     }
 
     if (delta?.tool_calls) {
@@ -79,6 +90,14 @@ export const streamOut = async (
 
   if (accumulated.tool_calls?.length === 0) {
     delete accumulated.tool_calls
+  }
+
+  if (!accumulated.content) {
+    delete accumulated.content
+  }
+
+  if (!accumulated.reasoning_content) {
+    delete accumulated.reasoning_content
   }
 
   return accumulated

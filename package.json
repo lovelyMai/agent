@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@vue/reactivity": "^3.5.41",
-    "openai": "^6.38.0"
+    "openai": "^7.5.0"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
