@@ -6,14 +6,12 @@ import { streamOut } from './stream'
 import { generateTools, type Tool, type ToolDefinition } from './tool'
 
 export type AgentManager = {
-  /** 模型 */
-  model: string
+  /** 模型配置 */
+  config: { model: string; [key: string]: any }
   /** 消息数组 */
   messages: (ChatCompletionMessageParam & { [key: string]: any })[]
   /** 最大迭代次数 */
   maxIteration: number
-  /** 模型 API 额外配置 */
-  config: Record<string, any>
   /** 环境参数对象 */
   environment: Record<string, any>
   /** 事件回调 */
@@ -26,13 +24,12 @@ export type AgentManager = {
   readonly stop: () => void
 }
 export const createAgentManager = (client: OpenAI): AgentManager => {
-  const model = ref<string>('')
+  const config = ref<{ model: string; [key: string]: any }>({ model: '' })
   const messages = ref<(ChatCompletionMessageParam & { [key: string]: any })[]>([])
   const toolDefinitions = ref<ToolDefinition[]>([])
   const toolExecutors = ref<Record<string, (...args: any[]) => any>>({})
   const maxIteration = ref<number>(10)
   const environment = shallowRef<Record<string, any>>({})
-  const config = ref<Record<string, any>>({})
   const onEvent = ref<(event: any) => void>()
   const isRunning = ref<boolean>(false)
   const updateTools = (tools: Tool[]) => {
@@ -53,10 +50,9 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
         const accumulated = await streamOut(
           client,
           {
-            model: model.value,
+            ...config.value,
             messages: filteredMessages,
             tools: toolDefinitions.value,
-            ...config.value,
           },
           (text: { content?: string; reasoning_content?: string }) => {
             onEvent.value?.({ type: 'message_update', text })
@@ -101,11 +97,10 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
   }
 
   return reactive({
-    model,
+    config,
     messages,
     maxIteration,
     environment,
-    config,
     onEvent,
     updateTools,
     start,
