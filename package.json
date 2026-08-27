@@ -1,7 +1,7 @@
 {
   "name": "@lovelymai/agent",
   "version": "1.0.0",
-  "description": "A pure util package",
+  "description": "一个纯净极简易于使用的 Agent 框架",
   "license": "MIT",
   "type": "module",
   "module": "dist/agent.js",
