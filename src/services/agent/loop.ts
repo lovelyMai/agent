@@ -27,7 +27,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
   const config = ref<{ model: string; [key: string]: any }>({ model: '' })
   const messages = ref<(ChatCompletionMessageParam & { [key: string]: any })[]>([])
   const toolDefinitions = ref<ToolDefinition[]>([])
-  const toolExecutors = ref<Record<string, (...args: any[]) => any>>({})
+  const toolExecutors = ref<Record<string, (args: Record<string, any>, env: Record<string, any>) => any>>({})
   const maxIteration = ref<number>(10)
   const environment = shallowRef<Record<string, any>>({})
   const onEvent = ref<(event: any) => void>()
@@ -72,7 +72,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           const executor = toolExecutors.value[toolCall.function.name]
           if (!executor) continue
           onEvent.value?.({ type: 'tool_start', toolCall })
-          const args = JSON.parse(toolCall.function.arguments)
+          const args = JSON.parse(toolCall.function.arguments) as Record<string, any>
           let result: any
           try {
             result = await executor(args, environment.value)
