@@ -3,14 +3,15 @@
     "lib": ["ES2020"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "skipLibCheck": true,
     "strict": true,
     "noImplicitAny": false,
     "allowJs": true,
-    "noEmit": true,
+    "rootDir": "./src",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules","dist",]
 }

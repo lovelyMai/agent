@@ -1,3 +1,1 @@
-import { createAgentManager, type AgentManager } from './services/agent/loop'
-
-export { createAgentManager, type AgentManager }
+export { createAgentManager, type AgentManager } from './services/agent/loop'
