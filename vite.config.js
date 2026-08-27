@@ -3,14 +3,17 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   resolve: {
     alias: {
-      '@': '/src'
+      '@': '/src',
     },
   },
   build: {
     lib: {
       entry: 'src/index.ts',
       fileName: () => `utils.js`,
-      formats: ['es']
+      formats: ['es'],
+    },
+    rollupOptions: {
+      external: ['openai', 'openai/**'],
     },
   },
 })
