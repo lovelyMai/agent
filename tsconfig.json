@@ -1,21 +1,16 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
-    "target": "ES2023",
-    "lib": ["ES2023"],
+    "lib": ["ES2020"],
     "module": "ESNext",
-    "strict": true,
-    "jsx": "preserve",
     "moduleResolution": "bundler",
+    "strict": true,
+    "noImplicitAny": false,
+    "allowJs": true,
+    "noEmit": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "dist",
-  ]
+  "exclude": ["node_modules","dist",]
 }
