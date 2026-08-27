@@ -23,14 +23,24 @@ export type AgentManager = {
   /** 结束 */
   readonly stop: () => void
 }
+export type Event =
+  | { type: 'agent_start' }
+  | { type: 'turn_start'; turnCount: number }
+  | { type: 'message_update'; text: { content?: string; reasoning_content?: string } }
+  | { type: 'tool_start'; toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall }
+  | { type: 'tool_end'; toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall }
+  | { type: 'agent_end'; turnCount: number }
+  | { type: 'agent_error'; error: unknown }
 export const createAgentManager = (client: OpenAI): AgentManager => {
   const config = ref<{ model: string; [key: string]: any }>({ model: '' })
   const messages = ref<(ChatCompletionMessageParam & { [key: string]: any })[]>([])
   const toolDefinitions = ref<ToolDefinition[]>([])
-  const toolExecutors = ref<Record<string, (args: Record<string, any>, env: Record<string, any>) => any>>({})
+  const toolExecutors = ref<
+    Record<string, (args: Record<string, any>, env: Record<string, any>) => any>
+  >({})
   const maxIteration = ref<number>(10)
   const environment = shallowRef<Record<string, any>>({})
-  const onEvent = ref<(event: any) => void>()
+  const onEvent = ref<(event: Event) => void>()
   const isRunning = ref<boolean>(false)
   const updateTools = (tools: Tool[]) => {
     const newTools = generateTools(tools)
@@ -62,7 +72,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
         messages.value.push(accumulated)
 
         if (!accumulated.tool_calls) {
-          onEvent.value?.({ type: 'agent_end' })
+          onEvent.value?.({ type: 'agent_end', turnCount: i })
           return
         }
         for (const toolCall of accumulated.tool_calls) {
