@@ -15,7 +15,7 @@ export type AgentManager = {
   /** 环境参数对象 */
   environment: Record<string, any>
   /** 事件回调 */
-  onEvent?: (event: any) => void
+  onEvent: ((event: Event) => void) | undefined
   /** 更新工具 */
   readonly updateTools: (tools: Tool[]) => void
   /** 开始 */
