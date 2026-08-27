@@ -1,15 +1,12 @@
 {
-  "name": "@lovelymai/utils",
+  "name": "@lovelymai/agent",
   "version": "1.0.0",
   "description": "A pure util package",
   "license": "MIT",
   "type": "module",
-  "main": "dist/utils.js",
-  "module": "dist/utils.js",
+  "module": "dist/agent.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "vite build && tsc --declaration --emitDeclarationOnly --outDir dist"
   },

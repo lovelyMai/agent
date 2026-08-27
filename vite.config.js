@@ -9,7 +9,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.ts',
-      fileName: () => `utils.js`,
+      fileName: () => `agent.js`,
       formats: ['es'],
     },
     rollupOptions: {
