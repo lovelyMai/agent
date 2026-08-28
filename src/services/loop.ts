@@ -2,8 +2,8 @@ import { reactive, ref, shallowRef } from '@vue/reactivity'
 
 import type OpenAI from 'openai'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
-import { streamOut } from './stream'
-import { generateTools, type Tool, type ToolDefinition } from './tool'
+import { streamOut } from './stream.ts'
+import { generateTools, type Tool, type ToolDefinition } from './tool.ts'
 
 export type AgentManager = {
   /** 模型配置 */

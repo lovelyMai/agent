@@ -1,13 +1,17 @@
 {
   "compilerOptions": {
     "lib": ["ES2020"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "strict": true,
     "noImplicitAny": false,
     "allowJs": true,
     "rootDir": "./src",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
     "paths": {
       "@/*": ["./src/*"]
     }
