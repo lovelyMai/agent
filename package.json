@@ -1,13 +1,17 @@
 {
   "name": "@lovelymai/agent",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "一个纯净极简易于使用的 Agent 框架",
   "keywords": ["agent"],
   "license": "MIT",
   "files": ["dist"],
   "type": "module",
-  "module": "dist/agent.js",
-  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/agent.js"
+    }
+  },
   "scripts": {
     "build": "vite build && tsc --declaration --emitDeclarationOnly --outDir dist"
   },
