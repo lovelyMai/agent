@@ -1,5 +1,4 @@
 {
-  "tabWidth": 2,
   "semi": false,
   "singleQuote": true,
   "trailingComma": "all",
@@ -8,22 +7,22 @@
     "groups": [
       "value-builtin",
       "value-external",
-      "type-import",
+      "type-external",
       { "newlinesBetween": true },
       "utils",
+      { "newlinesBetween": true },
       "modules",
+      { "newlinesBetween": true },
       "unknown"
     ],
     "customGroups": [
       {
         "groupName": "utils",
-        "elementNamePattern": ["**/utils/**"],
-        "modifiers": ["value"]
+        "elementNamePattern": ["**/utils", "**/utils/**"]
       },
       {
         "groupName": "modules",
-        "elementNamePattern": ["**/modules/**"],
-        "modifiers": ["value"]
+        "elementNamePattern": ["**/modules", "**/utils/**"]
       }
     ]
   }

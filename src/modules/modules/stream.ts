@@ -6,7 +6,7 @@ import type {
   ChatCompletionMessageFunctionToolCall,
 } from 'openai/resources/chat/completions'
 
-export type Config = {
+type Config = {
   /** 模型 */
   model: string
   /** 消息 */

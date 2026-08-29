@@ -23,6 +23,7 @@ export type AgentManager = {
   /** 结束 */
   readonly stop: () => void
 }
+export type { Tool }
 export type Event =
   | { type: 'agent_start' }
   | { type: 'turn_start'; turnCount: number }
@@ -31,6 +32,7 @@ export type Event =
   | { type: 'tool_end'; toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall }
   | { type: 'agent_end'; turnCount: number }
   | { type: 'agent_error'; error: unknown }
+
 export const createAgentManager = (client: OpenAI): AgentManager => {
   const config = ref<{ model: string; [key: string]: any }>({ model: '' })
   const messages = ref<(ChatCompletionMessageParam & { [key: string]: any })[]>([])
