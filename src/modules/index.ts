@@ -1,7 +1,7 @@
 import { reactive, ref, shallowRef } from '@vue/reactivity'
-
 import type OpenAI from 'openai'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
+
 import { streamOut } from './modules/stream.ts'
 import { generateTools, type Tool, type ToolDefinition } from './modules/tool.ts'
 

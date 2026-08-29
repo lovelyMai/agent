@@ -8,10 +8,10 @@
     "groups": [
       "value-builtin",
       "value-external",
-      { "newlinesBetween": true },
       "type-import",
+      { "newlinesBetween": true },
       "utils",
-      "services",
+      "modules",
       "unknown"
     ],
     "customGroups": [
@@ -21,8 +21,8 @@
         "modifiers": ["value"]
       },
       {
-        "groupName": "services",
-        "elementNamePattern": ["**/services/**", "@map/shared/services/**"],
+        "groupName": "modules",
+        "elementNamePattern": ["**/modules/**"],
         "modifiers": ["value"]
       }
     ]
