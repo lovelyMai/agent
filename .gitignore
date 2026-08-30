@@ -4,3 +4,4 @@
 # 项目
 node_modules
 dist
+config.ts

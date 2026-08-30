@@ -1,7 +1,6 @@
 {
   "semi": false,
   "singleQuote": true,
-  "trailingComma": "all",
   "sortImports": {
     "newlinesBetween": false,
     "groups": [
@@ -22,7 +21,7 @@
       },
       {
         "groupName": "modules",
-        "elementNamePattern": ["**/modules", "**/utils/**"]
+        "elementNamePattern": ["**/modules", "**/modules/**"]
       }
     ]
   }

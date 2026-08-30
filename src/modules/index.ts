@@ -66,7 +66,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             messages: filteredMessages,
             tools: toolDefinitions.value,
           },
-          (text: { content?: string; reasoning_content?: string }) => {
+          (text: { content?: string } | { reasoning_content?: string }) => {
             onEvent.value?.({ type: 'message_update', text })
           },
           isRunning,
@@ -91,9 +91,10 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           } catch (error) {
             result = error instanceof Error ? error.message : error
           }
+          result = typeof result === 'string' ? result : JSON.stringify(result)
           messages.value.push({
             role: 'tool',
-            content: JSON.stringify(result),
+            content: result,
             tool_call_id: toolCall.id,
           })
           onEvent.value?.({ type: 'tool_end', toolCall })

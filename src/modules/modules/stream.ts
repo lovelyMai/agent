@@ -30,7 +30,7 @@ type Accumulated = {
 export const streamOut = async (
   client: OpenAI,
   config: Config,
-  onChunk: (text: { content?: string; reasoning_content?: string }) => void,
+  onChunk: (text: { content: string } | { reasoning_content: string }) => void,
   isRunning: Ref<boolean>,
 ): Promise<Accumulated> => {
   const response = await client.chat.completions.create({
