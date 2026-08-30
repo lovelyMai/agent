@@ -12,7 +12,7 @@ export type AgentManager = {
   messages: (ChatCompletionMessageParam & { [key: string]: any })[]
   /** 最大迭代次数 */
   maxIteration: number
-  /** 环境参数对象 */
+  /** 环境参数对象，赋值给工具函数的第二个参数 */
   environment: Record<string, any>
   /** token 总量 */
   readonly usage: number

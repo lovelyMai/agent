@@ -23,11 +23,30 @@ const agent = createAgentManager(client)
 ## 第三步：配置模型与消息
 
 ```typescript
-agent.config.model = 'gpt-4o'
+agent.config = { model: 'deepseek-v4-flash', thinking: { type: 'disabled' } }
 agent.messages.push({ role: 'user', content: '你好' })
 ```
 
-## 第四步：监听事件
+## 第四步：注册工具（可选）
+
+定义工具并在 Agent 中注册，Agent 会在对话中自动调用：
+
+```typescript
+agent.updateTools([
+  {
+    name: 'get_weather',
+    description: '查询指定城市的天气',
+    properties: {
+      city: { type: 'string', description: '城市名称', required: true },
+    },
+    function: async ({ city }) => {
+      return `${city}今天晴，25°C`
+    },
+  },
+])
+```
+
+## 第五步：监听事件
 
 通过 `onEvent` 回调获取 Agent 运行过程中的各种事件：
 
@@ -50,25 +69,6 @@ agent.onEvent = (event) => {
 | `tool_end`       | 工具执行完成                                        |
 | `agent_end`      | Agent 运行结束                                      |
 | `agent_error`    | Agent 运行出错                                      |
-
-## 第五步：注册工具（可选）
-
-定义工具并在 Agent 中注册，Agent 会在对话中自动调用：
-
-```typescript
-agent.updateTools([
-  {
-    name: 'get_weather',
-    description: '查询指定城市的天气',
-    properties: {
-      city: { type: 'string', description: '城市名称', required: true },
-    },
-    function: async ({ city }) => {
-      return `${city}今天晴，25°C`
-    },
-  },
-])
-```
 
 ## 第六步：启动与停止
 
