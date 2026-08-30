@@ -20,11 +20,18 @@ type Delta = OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta & {
   reasoning_content?: string | null
 }
 
+type Usage = {
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+}
+
 type Accumulated = {
   role: 'assistant'
   content?: string
   reasoning_content?: string
   tool_calls?: ChatCompletionMessageFunctionToolCall[]
+  usage: Usage
 }
 
 export const streamOut = async (
@@ -37,6 +44,7 @@ export const streamOut = async (
     ...config,
     stream: true,
     tool_choice: 'auto',
+    stream_options: { include_usage: true },
   })
 
   const accumulated: Accumulated = {
@@ -44,6 +52,7 @@ export const streamOut = async (
     content: '',
     reasoning_content: '',
     tool_calls: [],
+    usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
   }
 
   for await (const chunk of response) {
@@ -85,6 +94,10 @@ export const streamOut = async (
           target.function.arguments += tc.function.arguments
         }
       }
+    }
+
+    if (chunk.usage) {
+      accumulated.usage = chunk.usage
     }
   }
 

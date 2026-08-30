@@ -14,6 +14,8 @@ export type AgentManager = {
   maxIteration: number
   /** 环境参数对象 */
   environment: Record<string, any>
+  /** token 总量 */
+  readonly usage: number
   /** 事件回调 */
   onEvent: ((event: Event) => void) | undefined
   /** 更新工具 */
@@ -44,6 +46,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
   const environment = shallowRef<Record<string, any>>({})
   const onEvent = ref<(event: Event) => void>()
   const isRunning = ref<boolean>(false)
+  const usage = ref<number>(0)
   const updateTools = (tools: Tool[]) => {
     const newTools = generateTools(tools)
     toolDefinitions.value = newTools.toolDefinitions
@@ -71,7 +74,12 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           },
           isRunning,
         )
-        messages.value.push(accumulated)
+        const {
+          usage: { total_tokens },
+          ...message
+        } = accumulated
+        usage.value = total_tokens
+        messages.value.push(message)
 
         if (!accumulated.tool_calls) {
           onEvent.value?.({ type: 'agent_end', turnCount: i })
@@ -115,6 +123,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
     maxIteration,
     environment,
     onEvent,
+    usage,
     updateTools,
     start,
     stop,

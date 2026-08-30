@@ -9,6 +9,7 @@
       "type-external",
       { "newlinesBetween": true },
       "utils",
+      "services",
       { "newlinesBetween": true },
       "modules",
       { "newlinesBetween": true },
@@ -18,6 +19,10 @@
       {
         "groupName": "utils",
         "elementNamePattern": ["**/utils", "**/utils/**"]
+      },
+      {
+        "groupName": "services",
+        "elementNamePattern": ["**/services", "**/services/**"]
       },
       {
         "groupName": "modules",

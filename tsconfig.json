@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["ES2020"],
+    "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
@@ -9,6 +9,7 @@
     "noImplicitAny": false,
     "allowJs": true,
     "types": ["node"],
+    "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"],
       "@test/*": ["./test/*"]
