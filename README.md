@@ -79,36 +79,3 @@ await agent.start()
 // 手动停止
 agent.stop()
 ```
-
-## 完整示例
-
-```typescript
-import OpenAI from 'openai'
-import { createAgentManager } from '@lovelymai/agent'
-
-const client = new OpenAI()
-const agent = createAgentManager(client)
-
-agent.config.model = 'gpt-4o'
-agent.maxIteration = 10
-
-agent.updateTools([
-  {
-    name: 'get_weather',
-    description: '查询指定城市的天气',
-    properties: {
-      city: { type: 'string', description: '城市名称', required: true },
-    },
-    function: async ({ city }) => `${city}今天晴，25°C`,
-  },
-])
-
-agent.onEvent = (event) => {
-  if (event.type === 'message_update' && 'content' in event.text) {
-    process.stdout.write(event.text.content ?? '')
-  }
-}
-
-agent.messages.push({ role: 'user', content: '北京今天天气怎么样？' })
-await agent.start()
-```
