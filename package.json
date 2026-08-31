@@ -18,7 +18,8 @@
   },
   "scripts": {
     "start": "tsx ./test/src/index.ts",
-    "build": "vite build && tsc -p tsconfig.build.json"
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "check": "tsc"
   },
   "dependencies": {
     "@vue/reactivity": "^3.5.41"
@@ -27,7 +28,7 @@
     "@types/node": "^26.4.0",
     "openai": "^7.7.0",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
     "vite": "^8.0.12"
   },
   "peerDependencies": {
