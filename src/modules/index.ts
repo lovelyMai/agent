@@ -2,6 +2,8 @@ import { reactive, ref, shallowRef } from '@vue/reactivity'
 import type OpenAI from 'openai'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
+import { createError } from './utils/error.ts'
+
 import { streamOut } from './modules/stream.ts'
 import { generateTools, type Tool, type ToolDefinition } from './modules/tool.ts'
 
@@ -55,10 +57,15 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
   const start = async () => {
     isRunning.value = true
     onEvent.value?.({ type: 'agent_start' })
+    let turnCount: number = 1
     try {
-      for (let i = 0; i < maxIteration.value; i++) {
-        if (!isRunning.value) return
-        onEvent.value?.({ type: 'turn_start', turnCount: i })
+      for (let i = 1; i <= maxIteration.value; i++) {
+        if (!isRunning.value) {
+          onEvent.value?.({ type: 'agent_end', turnCount })
+          return
+        }
+        turnCount = i
+        onEvent.value?.({ type: 'turn_start', turnCount })
         const filteredMessages = messages.value.filter((message) =>
           ['system', 'user', 'assistant', 'tool'].includes(message.role),
         )
@@ -82,12 +89,13 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
         messages.value.push(message)
 
         if (!accumulated.tool_calls) {
-          onEvent.value?.({ type: 'agent_end', turnCount: i })
+          onEvent.value?.({ type: 'agent_end', turnCount })
           return
         }
         for (const toolCall of accumulated.tool_calls) {
           if (!isRunning.value) {
-            throw new Error('主动停止')
+            onEvent.value?.({ type: 'agent_end', turnCount })
+            return
           }
           const executor = toolExecutors.value[toolCall.function.name]
           if (!executor) continue
@@ -108,8 +116,12 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           onEvent.value?.({ type: 'tool_end', toolCall })
         }
       }
-      onEvent.value?.({ type: 'agent_end', turnCount: maxIteration.value })
-    } catch (error) {
+      onEvent.value?.({ type: 'agent_end', turnCount })
+    } catch (error: any) {
+      if (error.code === 200) {
+        onEvent.value?.({ type: 'agent_end', turnCount })
+        return
+      }
       onEvent.value?.({ type: 'agent_error', error })
     }
   }

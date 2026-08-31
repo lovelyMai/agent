@@ -6,6 +6,8 @@ import type {
   ChatCompletionMessageFunctionToolCall,
 } from 'openai/resources/chat/completions'
 
+import { createError } from '../utils/error.ts'
+
 type Config = {
   /** 模型 */
   model: string
@@ -57,7 +59,7 @@ export const streamOut = async (
 
   for await (const chunk of response) {
     if (!isRunning.value) {
-      throw new Error('主动停止')
+      throw createError('主动停止', 200)
     }
 
     const delta = chunk.choices[0]?.delta as Delta

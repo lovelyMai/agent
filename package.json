@@ -1,6 +1,6 @@
 {
   "name": "@lovelymai/agent",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "一个纯净极简易于使用的 Agent 框架",
   "keywords": [
     "agent"
