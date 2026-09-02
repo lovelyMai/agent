@@ -2,8 +2,6 @@ import { reactive, ref, shallowRef } from '@vue/reactivity'
 import type OpenAI from 'openai'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
-import { createError } from './utils/error.ts'
-
 import { streamOut } from './modules/stream.ts'
 import { generateTools, type Tool, type ToolDefinition } from './modules/tool.ts'
 
@@ -118,6 +116,14 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
       }
       onEvent.value?.({ type: 'agent_end', turnCount })
     } catch (error: any) {
+      if (error.accumulated) {
+        const {
+          usage: { total_tokens },
+          ...message
+        } = error.accumulated
+        usage.value = total_tokens
+        messages.value.push(message)
+      }
       if (error.code === 200) {
         onEvent.value?.({ type: 'agent_end', turnCount })
         return
