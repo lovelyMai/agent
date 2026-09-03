@@ -44,6 +44,7 @@ export type Event =
       toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall
       turnCount: number
     }
+  | { type: 'turn_end'; turnCount: number }
   | { type: 'agent_end'; turnCount: number }
   | { type: 'agent_error'; error: unknown; turnCount: number }
 
@@ -126,6 +127,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           })
           onEvent.value?.({ type: 'tool_end', toolCall, turnCount })
         }
+        onEvent.value?.({ type: 'turn_end', turnCount })
         if (!isRunning.value) {
           onEvent.value?.({ type: 'agent_end', turnCount })
           return
