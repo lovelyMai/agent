@@ -77,7 +77,6 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
     isRunning.value = true
     onEvent.value?.({ type: 'agent_start' })
     let turnCount: number = 1
-    isFirstChunk = true
     if (tip.value) {
       messages.value.push({ role: 'assistant', content: tip.value })
     }
@@ -120,15 +119,9 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           messages.value.push(message)
         }
 
-        if (!accumulated.tool_calls) {
-          onEvent.value?.({ type: 'agent_end', turnCount })
-          return
-        }
+        if (!accumulated.tool_calls) return
         for (const toolCall of accumulated.tool_calls) {
-          if (!isRunning.value) {
-            onEvent.value?.({ type: 'agent_end', turnCount })
-            return
-          }
+          if (!isRunning.value) return
           const executor = toolExecutors.value[toolCall.function.name]
           if (!executor) continue
           onEvent.value?.({ type: 'tool_start', toolCall, turnCount })
@@ -148,12 +141,8 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           onEvent.value?.({ type: 'tool_end', toolCall, turnCount })
         }
         onEvent.value?.({ type: 'turn_end', turnCount })
-        if (!isRunning.value) {
-          onEvent.value?.({ type: 'agent_end', turnCount })
-          return
-        }
+        if (!isRunning.value) return
       }
-      onEvent.value?.({ type: 'agent_end', turnCount })
     } catch (error: any) {
       if (error.accumulated) {
         const {
@@ -168,11 +157,11 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           messages.value.push(message)
         }
       }
-      if (error.code === 200) {
-        onEvent.value?.({ type: 'agent_end', turnCount })
-        return
-      }
+      if (error.code === 200) return
       onEvent.value?.({ type: 'agent_error', error, turnCount })
+    } finally {
+      isFirstChunk = true
+      onEvent.value?.({ type: 'agent_end', turnCount })
     }
   }
   const stop = () => {
