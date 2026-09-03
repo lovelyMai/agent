@@ -29,11 +29,23 @@ export type { Tool }
 export type Event =
   | { type: 'agent_start' }
   | { type: 'turn_start'; turnCount: number }
-  | { type: 'message_update'; text: { content?: string; reasoning_content?: string } }
-  | { type: 'tool_start'; toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall }
-  | { type: 'tool_end'; toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall }
+  | {
+      type: 'message_update'
+      text: { content?: string; reasoning_content?: string }
+      turnCount: number
+    }
+  | {
+      type: 'tool_start'
+      toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall
+      turnCount: number
+    }
+  | {
+      type: 'tool_end'
+      toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall
+      turnCount: number
+    }
   | { type: 'agent_end'; turnCount: number }
-  | { type: 'agent_error'; error: unknown }
+  | { type: 'agent_error'; error: unknown; turnCount: number }
 
 export const createAgentManager = (client: OpenAI): AgentManager => {
   const config = ref<{ model: string; [key: string]: any }>({ model: '' })
@@ -58,10 +70,6 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
     let turnCount: number = 1
     try {
       for (let i = 1; i <= maxIteration.value; i++) {
-        if (!isRunning.value) {
-          onEvent.value?.({ type: 'agent_end', turnCount })
-          return
-        }
         turnCount = i
         onEvent.value?.({ type: 'turn_start', turnCount })
         const filteredMessages = messages.value.filter((message) =>
@@ -75,7 +83,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             tools: toolDefinitions.value,
           },
           (text: { content?: string } | { reasoning_content?: string }) => {
-            onEvent.value?.({ type: 'message_update', text })
+            onEvent.value?.({ type: 'message_update', text, turnCount })
           },
           isRunning,
         )
@@ -102,7 +110,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           }
           const executor = toolExecutors.value[toolCall.function.name]
           if (!executor) continue
-          onEvent.value?.({ type: 'tool_start', toolCall })
+          onEvent.value?.({ type: 'tool_start', toolCall, turnCount })
           const args = JSON.parse(toolCall.function.arguments) as Record<string, any>
           let result: any
           try {
@@ -116,7 +124,11 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             content: result,
             tool_call_id: toolCall.id,
           })
-          onEvent.value?.({ type: 'tool_end', toolCall })
+          onEvent.value?.({ type: 'tool_end', toolCall, turnCount })
+        }
+        if (!isRunning.value) {
+          onEvent.value?.({ type: 'agent_end', turnCount })
+          return
         }
       }
       onEvent.value?.({ type: 'agent_end', turnCount })
@@ -138,7 +150,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
         onEvent.value?.({ type: 'agent_end', turnCount })
         return
       }
-      onEvent.value?.({ type: 'agent_error', error })
+      onEvent.value?.({ type: 'agent_error', error, turnCount })
     }
   }
   const stop = () => {
