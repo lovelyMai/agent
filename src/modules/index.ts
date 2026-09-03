@@ -84,7 +84,12 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           ...message
         } = accumulated
         usage.value = total_tokens
-        messages.value.push(message)
+        const lastMessage = messages.value[messages.value.length - 1]
+        if (lastMessage.role === 'assistant') {
+          messages.value[messages.value.length - 1] = message
+        } else {
+          messages.value.push(message)
+        }
 
         if (!accumulated.tool_calls) {
           onEvent.value?.({ type: 'agent_end', turnCount })
@@ -122,7 +127,12 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           ...message
         } = error.accumulated
         usage.value = total_tokens
-        messages.value.push(message)
+        const lastMessage = messages.value[messages.value.length - 1]
+        if (lastMessage.role === 'assistant') {
+          messages.value[messages.value.length - 1] = message
+        } else {
+          messages.value.push(message)
+        }
       }
       if (error.code === 200) {
         onEvent.value?.({ type: 'agent_end', turnCount })

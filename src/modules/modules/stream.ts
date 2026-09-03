@@ -12,10 +12,11 @@ type Config = {
   /** 模型 */
   model: string
   /** 消息 */
-  messages: ChatCompletionMessageParam[]
+  messages: (ChatCompletionMessageParam & {
+    reasoning_content?: string | null
+  })[]
   /** 工具定义 */
   tools: ChatCompletionTool[]
-  [key: string]: any
 }
 
 type Delta = OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta & {
@@ -30,8 +31,8 @@ type Usage = {
 
 type Accumulated = {
   role: 'assistant'
-  content?: string
-  reasoning_content?: string
+  content?: string | null
+  reasoning_content?: string | null
   tool_calls?: ChatCompletionMessageFunctionToolCall[]
   usage: Usage
 }
@@ -42,13 +43,24 @@ export const streamOut = async (
   onChunk: (text: { content: string } | { reasoning_content: string }) => void,
   isRunning: Ref<boolean>,
 ): Promise<Accumulated> => {
-  const accumulated: Accumulated = {
-    role: 'assistant',
-    content: '',
-    reasoning_content: '',
-    tool_calls: [],
-    usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-  }
+  const messages = config.messages
+  const lastMessage = messages[messages.length - 1]
+  const accumulated: Accumulated =
+    lastMessage.role === 'assistant'
+      ? {
+          role: 'assistant',
+          content: typeof lastMessage.content === 'string' ? lastMessage.content : '',
+          reasoning_content: lastMessage.reasoning_content,
+          tool_calls: [],
+          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        }
+      : {
+          role: 'assistant',
+          content: '',
+          reasoning_content: '',
+          tool_calls: [],
+          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        }
   try {
     const response = await client.chat.completions.create({
       ...config,

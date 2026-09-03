@@ -1,4 +1,4 @@
-import { AI_CONFIG } from '@test/config.ts'
+import { AI_CONFIG } from '@test/config.test.ts'
 import OpenAI from 'openai'
 
 import { createAgentManager } from '@/index.ts'
