@@ -17,6 +17,8 @@ type Config = {
   })[]
   /** 工具定义 */
   tools: ChatCompletionTool[]
+  /** 工具选择 */
+  tool_choice: 'auto' | 'none' | 'required'
 }
 
 type Delta = OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta & {
@@ -44,28 +46,17 @@ export const streamOut = async (
   isRunning: Ref<boolean>,
 ): Promise<Accumulated> => {
   const messages = config.messages
-  const lastMessage = messages[messages.length - 1]
-  const accumulated: Accumulated =
-    lastMessage.role === 'assistant'
-      ? {
-          role: 'assistant',
-          content: typeof lastMessage.content === 'string' ? lastMessage.content : '',
-          reasoning_content: lastMessage.reasoning_content,
-          tool_calls: [],
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        }
-      : {
-          role: 'assistant',
-          content: '',
-          reasoning_content: '',
-          tool_calls: [],
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        }
+  const accumulated: Accumulated = {
+    role: 'assistant',
+    content: '',
+    reasoning_content: '',
+    tool_calls: [],
+    usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+  }
   try {
     const response = await client.chat.completions.create({
       ...config,
       stream: true,
-      tool_choice: 'auto',
       stream_options: { include_usage: true },
     })
 

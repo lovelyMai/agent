@@ -5,17 +5,20 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
 import { streamOut } from './modules/stream.ts'
 import { generateTools, type Tool, type ToolDefinition } from './modules/tool.ts'
 
+type Config = {
+  model: string
+  tool_choice: 'auto' | 'none' | 'required'
+  [key: string]: any
+}
 export type AgentManager = {
   /** 模型配置 */
-  config: { model: string; [key: string]: any }
+  config: Config
   /** 消息数组 */
   messages: (ChatCompletionMessageParam & { [key: string]: any })[]
   /** 最大迭代次数 */
   maxIteration: number
   /** 环境参数对象，赋值给工具函数的第二个参数 */
   environment: Record<string, any>
-  /** 提示，强制让模型续写这个内容 */
-  tip: string
   /** token 总量 */
   readonly usage: number
   /** 事件回调 */
@@ -48,13 +51,13 @@ export type Event =
     }
   | { type: 'turn_end'; turnCount: number }
   | { type: 'agent_end'; turnCount: number }
-  | { type: 'agent_error'; error: unknown; turnCount: number }
+  | { type: 'agent_error'; error: any; turnCount: number }
 
 export const createAgentManager = (client: OpenAI): AgentManager => {
-  const config = ref<{ model: string; [key: string]: any }>({ model: '' })
+  const config = ref<Config>({ model: '', tool_choice: 'auto' })
   const messages = ref<(ChatCompletionMessageParam & { [key: string]: any })[]>([])
 
-  // 更新工具
+  // 工具
   const toolDefinitions = ref<ToolDefinition[]>([])
   const toolExecutors = ref<
     Record<string, (args: Record<string, any>, env: Record<string, any>) => any>
@@ -67,8 +70,6 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
 
   const maxIteration = ref<number>(10)
   const environment = shallowRef<Record<string, any>>({})
-  const tip = ref<string>('')
-  let isFirstChunk: boolean = true
   const onEvent = ref<(event: Event) => void>()
   const isRunning = ref<boolean>(false)
   const usage = ref<number>(0)
@@ -77,9 +78,6 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
     isRunning.value = true
     onEvent.value?.({ type: 'agent_start' })
     let turnCount: number = 1
-    if (tip.value) {
-      messages.value.push({ role: 'assistant', content: tip.value })
-    }
     try {
       for (let i = 1; i <= maxIteration.value; i++) {
         turnCount = i
@@ -95,18 +93,10 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             tools: toolDefinitions.value,
           },
           (text: { content?: string } | { reasoning_content?: string }) => {
-            if ('content' in text && tip.value && isFirstChunk) {
-              text.content = tip.value + text.content
-              isFirstChunk = false
-            }
             onEvent.value?.({ type: 'message_update', text, turnCount })
           },
           isRunning,
         )
-        if (tip.value && isFirstChunk) {
-          onEvent.value?.({ type: 'message_update', text: { content: tip.value }, turnCount })
-          isFirstChunk = false
-        }
         const {
           usage: { total_tokens },
           ...message
@@ -160,7 +150,6 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
       if (error.code === 200) return
       onEvent.value?.({ type: 'agent_error', error, turnCount })
     } finally {
-      isFirstChunk = true
       onEvent.value?.({ type: 'agent_end', turnCount })
     }
   }
@@ -173,7 +162,6 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
     messages,
     maxIteration,
     environment,
-    tip,
     onEvent,
     usage,
     updateTools,
