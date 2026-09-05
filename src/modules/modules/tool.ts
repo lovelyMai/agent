@@ -5,6 +5,7 @@ type Property = {
   items?: { type: string }
   enum?: string[]
   minItems?: number
+  maxItems?: number
 }
 
 export type Tool = {
