@@ -47,6 +47,7 @@ export type Event =
   | {
       type: 'tool_end'
       toolCall: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall
+      success: boolean
       turnCount: number
     }
   | { type: 'turn_end'; turnCount: number }
@@ -117,10 +118,13 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           onEvent.value?.({ type: 'tool_start', toolCall, turnCount })
           const args = JSON.parse(toolCall.function.arguments) as Record<string, any>
           let result: any
+          let success: boolean
           try {
             result = await executor(args, environment.value)
-          } catch (error) {
+            success = true
+          } catch (error: any) {
             result = error instanceof Error ? error.message : error
+            success = false
           }
           result = typeof result === 'string' ? result : JSON.stringify(result)
           messages.value.push({
@@ -128,7 +132,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             content: result,
             tool_call_id: toolCall.id,
           })
-          onEvent.value?.({ type: 'tool_end', toolCall, turnCount })
+          onEvent.value?.({ type: 'tool_end', toolCall, success, turnCount })
         }
         onEvent.value?.({ type: 'turn_end', turnCount })
         if (!isRunning.value) return
