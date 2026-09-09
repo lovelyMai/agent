@@ -110,6 +110,10 @@ export const streamOut = async (
       delete accumulated.tool_calls
     }
 
+    if (config.tool_choice === 'none' && accumulated.tool_calls?.length) {
+      throw createError('模型在 tool_choice 为 none 时仍返回了工具调用', 400)
+    }
+
     if (!accumulated.content) {
       delete accumulated.content
     }

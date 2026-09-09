@@ -39,17 +39,20 @@ await runTest('tool_choice: auto 应由模型自主决定', async () => {
   assert.ok(toolStarted, 'tool_choice 为 auto 时模型应自主决定调用工具')
 })
 
-await runTest('tool_choice: none 应阻止工具调用', async () => {
+await runTest('tool_choice: none 时模型违规返回工具调用应报错', async () => {
   const manager = createManager()
   manager.updateTools(tools)
   manager.config.tool_choice = 'none'
   manager.messages.push({ role: 'user', content: '调用 get_weather 工具查询北京天气' })
 
   let toolStarted = false
+  let agentError: any
   manager.onEvent = (e) => {
     if (e.type === 'tool_start') toolStarted = true
+    if (e.type === 'agent_error') agentError = e.error
   }
 
   await manager.start()
   assert.ok(!toolStarted, 'tool_choice 为 none 时不应触发工具调用')
+  assert.ok(agentError, '模型违规返回工具调用时应触发 agent_error')
 })
