@@ -39,6 +39,21 @@ await runTest('tool_choice: auto 应由模型自主决定', async () => {
   assert.ok(toolStarted, 'tool_choice 为 auto 时模型应自主决定调用工具')
 })
 
+await runTest('tool_choice 为工具名应强制调用指定工具', async () => {
+  const manager = createManager()
+  manager.updateTools(tools)
+  manager.config.tool_choice = 'get_weather'
+  manager.messages.push({ role: 'user', content: '北京今天天气怎么样' })
+
+  let toolName = ''
+  manager.onEvent = (e) => {
+    if (e.type === 'tool_start') toolName = e.toolCall.function.name
+  }
+
+  await manager.start()
+  assert.equal(toolName, 'get_weather', 'tool_choice 为工具名时应强制调用指定工具')
+})
+
 await runTest('tool_choice: none 时模型违规返回工具调用应报错', async () => {
   const manager = createManager()
   manager.updateTools(tools)

@@ -1,13 +1,13 @@
-import { reactive, ref, shallowRef } from '@vue/reactivity'
+import { computed, reactive, ref, shallowRef } from '@vue/reactivity'
 import type OpenAI from 'openai'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
-import { streamOut } from './modules/stream.ts'
+import { streamOut, type StreamConfig } from './modules/stream.ts'
 import { generateTools, type Tool, type ToolDefinition } from './modules/tool.ts'
 
 type Config = {
   model: string
-  tool_choice: 'auto' | 'none' | 'required'
+  tool_choice: 'auto' | 'none' | 'required' | string
   [key: string]: any
 }
 export type AgentManager = {
@@ -56,6 +56,19 @@ export type Event =
 
 export const createAgentManager = (client: OpenAI): AgentManager => {
   const config = ref<Config>({ model: '', tool_choice: 'auto' })
+  const transformedConfig = computed(() => {
+    if (['auto', 'none', 'required'].includes(config.value.tool_choice)) {
+      return config.value
+    } else {
+      return {
+        ...config.value,
+        tool_choice: {
+          type: 'function',
+          function: { name: config.value.tool_choice },
+        },
+      }
+    }
+  })
   const messages = ref<(ChatCompletionMessageParam & { [key: string]: any })[]>([])
 
   // 工具
@@ -89,10 +102,10 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
         const accumulated = await streamOut(
           client,
           {
-            ...config.value,
+            ...transformedConfig.value,
             messages: filteredMessages,
             tools: toolDefinitions.value,
-          },
+          } as StreamConfig,
           (text: { content?: string } | { reasoning_content?: string }) => {
             onEvent.value?.({ type: 'message_update', text, turnCount })
           },

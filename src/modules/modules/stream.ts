@@ -4,11 +4,12 @@ import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
   ChatCompletionMessageFunctionToolCall,
+  ChatCompletionToolChoiceOption,
 } from 'openai/resources/chat/completions'
 
 import { createError } from '../utils/error.ts'
 
-type Config = {
+export type StreamConfig = {
   /** 模型 */
   model: string
   /** 消息 */
@@ -18,7 +19,7 @@ type Config = {
   /** 工具定义 */
   tools: ChatCompletionTool[]
   /** 工具选择 */
-  tool_choice: 'auto' | 'none' | 'required'
+  tool_choice: ChatCompletionToolChoiceOption
 }
 
 type Delta = OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta & {
@@ -41,7 +42,7 @@ type Accumulated = {
 
 export const streamOut = async (
   client: OpenAI,
-  config: Config,
+  config: StreamConfig,
   onChunk: (text: { content: string } | { reasoning_content: string }) => void,
   isRunning: Ref<boolean>,
 ): Promise<Accumulated> => {
