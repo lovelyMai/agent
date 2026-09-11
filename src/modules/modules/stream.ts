@@ -46,7 +46,6 @@ export const streamOut = async (
   onChunk: (text: { content: string } | { reasoning_content: string }) => void,
   isRunning: Ref<boolean>,
 ): Promise<Accumulated> => {
-  const messages = config.messages
   const accumulated: Accumulated = {
     role: 'assistant',
     content: '',
@@ -107,20 +106,24 @@ export const streamOut = async (
       }
     }
 
-    if (accumulated.tool_calls?.length === 0) {
-      delete accumulated.tool_calls
+    if (config.tool_choice === 'none' && accumulated.tool_calls?.length) {
+      throw createError('模型在 tool_choice 为 none 时仍返回了工具调用', 400)
     }
-
-    if (!accumulated.content) {
-      delete accumulated.content
-    }
-
-    if (!accumulated.reasoning_content) {
-      delete accumulated.reasoning_content
+    const forcedToolName =
+      typeof config.tool_choice === 'object' && config.tool_choice.type === 'function'
+        ? config.tool_choice.function.name
+        : undefined
+    if (
+      forcedToolName &&
+      accumulated.tool_calls?.some((tc) => tc.function.name !== forcedToolName)
+    ) {
+      throw createError('模型调用了非指定的工具', 400)
     }
 
     return accumulated
   } catch (error: any) {
+    throw Object.assign(error, { accumulated })
+  } finally {
     if (accumulated.tool_calls?.length === 0) {
       delete accumulated.tool_calls
     }
@@ -130,6 +133,5 @@ export const streamOut = async (
     if (!accumulated.reasoning_content) {
       delete accumulated.reasoning_content
     }
-    throw Object.assign(error, { accumulated })
   }
 }

@@ -7,14 +7,11 @@
     "allowImportingTsExtensions": true,
     "strict": true,
     "noImplicitAny": false,
-    "allowJs": true,
-    "types": ["node"],
     "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"],
       "@test/*": ["./test/*"]
     },
   },
-  "include": ["**/*.ts","**/*.js"],
-  "exclude": ["dist"]
+  "include": ["**/*.ts"]
 }

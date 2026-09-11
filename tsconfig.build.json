@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["ES2020"],
+    "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "declaration": true,
@@ -10,12 +10,10 @@
     "outDir": "./dist",
     "strict": true,
     "noImplicitAny": false,
-    "allowJs": true,
     "skipLibCheck": true,
-    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"]
     },
   },
-  "include": ["./src/**/*.ts", "./src/**/*.js"]
+  "include": ["./src/**/*.ts"]
 }

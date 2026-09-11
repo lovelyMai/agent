@@ -54,6 +54,27 @@ await runTest('tool_choice 为工具名应强制调用指定工具', async () =>
   assert.equal(toolName, 'get_weather', 'tool_choice 为工具名时应强制调用指定工具')
 })
 
+await runTest('tool_choice 为工具名时模型调用其他工具应报错', async () => {
+  const manager = createManager()
+  manager.updateTools(tools)
+  manager.config.tool_choice = 'get_weather'
+  manager.messages.push({
+    role: 'user',
+    content: '不要调用 get_weather，请用 calculate 工具计算 1+1 的结果',
+  })
+
+  let toolStarted = false
+  let agentError: any
+  manager.onEvent = (e) => {
+    if (e.type === 'tool_start') toolStarted = true
+    if (e.type === 'agent_error') agentError = e.error
+  }
+
+  await manager.start()
+  assert.ok(!toolStarted, '不应执行非指定工具')
+  assert.ok(agentError, '模型调用非指定工具时应触发 agent_error')
+})
+
 await runTest('tool_choice: none 时模型违规返回工具调用应报错', async () => {
   const manager = createManager()
   manager.updateTools(tools)
