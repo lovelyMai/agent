@@ -30,10 +30,12 @@ export type ToolDefinition = {
 
 export const generateTools = (tools: Tool[]) => {
   const toolDefinitions: ToolDefinition[] = tools.map((tool) => {
-    const cleanProperties = { ...tool.properties }
-    for (const key of Object.keys(cleanProperties)) {
-      delete cleanProperties[key].required
-    }
+    const cleanProperties = Object.fromEntries(
+      Object.entries(tool.properties).map(([key, value]) => {
+        const { required, ...rest } = value
+        return [key, rest]
+      }),
+    )
     return {
       type: 'function',
       function: {
