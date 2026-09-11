@@ -2,13 +2,9 @@
   "name": "@lovelymai/agent",
   "version": "1.1.12",
   "description": "一个纯净、极简、易于使用的 Agent 框架",
-  "keywords": [
-    "agent"
-  ],
+  "keywords": ["agent"],
   "license": "MIT",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "type": "module",
   "exports": {
     ".": {
@@ -29,7 +25,7 @@
     "openai": "^7.7.0",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",
-    "vite": "^8.0.12"
+    "vite": "^8.3.0"
   },
   "peerDependencies": {
     "openai": ">=4.0.0"
