@@ -127,7 +127,14 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
         for (const toolCall of accumulated.tool_calls) {
           if (!isRunning.value) return
           const executor = toolExecutors.value[toolCall.function.name]
-          if (!executor) continue
+          if (!executor) {
+            messages.value.push({
+              role: 'tool',
+              content: '工具不存在',
+              tool_call_id: toolCall.id,
+            })
+            continue
+          }
           onEvent.value?.({ type: 'tool_start', toolCall, turnCount })
           const args = JSON.parse(toolCall.function.arguments) as Record<string, any>
           let result: any
