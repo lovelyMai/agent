@@ -58,7 +58,7 @@ export const streamOut = async (
     usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
   }
   if (prefillIndex !== -1) {
-    messages.splice(prefillIndex, 0, {
+    messages.push({
       role: 'system',
       content: '直接续写最后一条 assistant 消息，不要重复已有内容，不要解释',
     })

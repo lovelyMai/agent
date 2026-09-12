@@ -19,7 +19,7 @@ const collectContent = (manager: ReturnType<typeof createManager>) => {
   return chunks
 }
 
-await runTest('prefill：末尾 assistant 应作为请求体最后一条', async () => {
+await runTest('prefill：末尾 assistant 应作为提示词前一条', async () => {
   const { client, requests } = createSequenceMockClient([[contentChunk('2'), usageChunk(20)]])
   const manager = createManager(client)
   manager.messages.push({ role: 'user', content: '1+1=' })
@@ -28,10 +28,10 @@ await runTest('prefill：末尾 assistant 应作为请求体最后一条', async
   await manager.start()
 
   const sent = requests[0].messages
-  assert.deepEqual(sent[sent.length - 1], { role: 'assistant', content: '答案是 1+1=' })
+  assert.deepEqual(sent[sent.length - 2], { role: 'assistant', content: '答案是 1+1=' })
 })
 
-await runTest('prefill：续写提示词应插在 assistant 之前', async () => {
+await runTest('prefill：续写提示词应追加在 assistant 之后', async () => {
   const { client, requests } = createSequenceMockClient([[contentChunk('2'), usageChunk(20)]])
   const manager = createManager(client)
   manager.messages.push({ role: 'user', content: '1+1=' })
@@ -40,9 +40,9 @@ await runTest('prefill：续写提示词应插在 assistant 之前', async () =>
   await manager.start()
 
   const sent = requests[0].messages
-  assert.equal(sent[sent.length - 2].role, 'system', '提示词应在 assistant 之前')
-  assert.match(sent[sent.length - 2].content, /续写/)
-  assert.equal(sent[sent.length - 1].role, 'assistant')
+  assert.equal(sent[sent.length - 1].role, 'system', '提示词应在 assistant 之后')
+  assert.match(sent[sent.length - 1].content, /续写/)
+  assert.equal(sent[sent.length - 2].role, 'assistant')
 })
 
 await runTest('prefill：生成后应替换而非追加', async () => {
@@ -120,8 +120,10 @@ await runTest('末尾为 system 时仍应判为 prefill', async () => {
   await manager.start()
 
   const sent = requests[0].messages
-  assert.equal(sent[sent.length - 1].content, '你是一个助手', 'system 应保持在末尾')
-  assert.equal(sent[sent.length - 2].content, '答案是 1+1=', 'assistant 应保留前缀')
+  assert.equal(sent[sent.length - 3].content, '答案是 1+1=', 'assistant 应保留前缀')
+  assert.equal(sent[sent.length - 2].content, '你是一个助手', 'system 应保持在原位')
+  assert.equal(sent[sent.length - 1].role, 'system', '提示词应在末尾')
+  assert.match(sent[sent.length - 1].content, /续写/)
   assert.equal(manager.messages[1].content, '答案是 1+1=2', '应替换而非追加')
 })
 
