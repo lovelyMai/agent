@@ -15,5 +15,6 @@ export const createManager = () => {
   const client = createClient()
   const manager = createAgentManager(client)
   manager.config.model = AI_CONFIG.model
+  manager.config.thinking = { type: 'disabled' }
   return manager
 }
