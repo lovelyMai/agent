@@ -19,7 +19,7 @@ export const completeToolCalls = (messages: Message[]) => {
       if (!replied.has(toolCall.id)) {
         messages.push({
           role: 'tool',
-          content: '工具调用已被用户取消',
+          content: '工具调用已被取消',
           tool_call_id: toolCall.id,
         })
       }
