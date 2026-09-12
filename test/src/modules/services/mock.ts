@@ -49,6 +49,10 @@ export const reasoningChunk = (text: string): MockChunk => ({
   choices: [{ delta: { reasoning_content: text } }],
 })
 
+export const finishChunk = (reason = 'stop'): MockChunk => ({
+  choices: [{ delta: {}, finish_reason: reason }],
+})
+
 export const createSequenceMockClient = (calls: MockChunk[][]) => {
   const requests: any[] = []
   let index = 0

@@ -110,6 +110,44 @@ await runTest('prefill：不应污染 messages', async () => {
   assert.ok(!manager.messages.some((m) => m.role === 'system'), '提示词不应写入 messages')
 })
 
+await runTest('末尾为 system 时仍应判为 prefill', async () => {
+  const { client, requests } = createSequenceMockClient([[contentChunk('2'), usageChunk(20)]])
+  const manager = createManager(client)
+  manager.messages.push({ role: 'user', content: '1+1=' })
+  manager.messages.push({ role: 'assistant', content: '答案是 1+1=' })
+  manager.messages.push({ role: 'system', content: '你是一个助手' })
+
+  await manager.start()
+
+  const sent = requests[0].messages
+  assert.equal(sent[sent.length - 1].content, '你是一个助手', 'system 应保持在末尾')
+  assert.equal(sent[sent.length - 2].content, '答案是 1+1=', 'assistant 应保留前缀')
+  assert.equal(manager.messages[1].content, '答案是 1+1=2', '应替换而非追加')
+})
+
+await runTest('末尾为未知 role 时仍应判为 prefill', async () => {
+  const { client } = createSequenceMockClient([[contentChunk('2'), usageChunk(20)]])
+  const manager = createManager(client)
+  manager.messages.push({ role: 'user', content: '1+1=' })
+  manager.messages.push({ role: 'assistant', content: '答案是 1+1=' })
+  manager.messages.push({ role: 'custom', content: 'c' } as any)
+
+  await manager.start()
+
+  assert.equal(manager.messages[1].content, '答案是 1+1=2', '应替换而非追加')
+})
+
+await runTest('仅 assistant 时也应判为 prefill', async () => {
+  const { client } = createSequenceMockClient([[contentChunk('2'), usageChunk(20)]])
+  const manager = createManager(client)
+  manager.messages.push({ role: 'assistant', content: '答案是 1+1=' })
+
+  await manager.start()
+
+  assert.equal(manager.messages.length, 1, '不应追加')
+  assert.equal(manager.messages[0].content, '答案是 1+1=2')
+})
+
 await runTest('content 为数组时不应拼出 object', async () => {
   const { client } = createSequenceMockClient([[contentChunk('续'), usageChunk(20)]])
   const manager = createManager(client)

@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
+import type OpenAI from 'openai'
 
 import { runTest } from './utils/run.ts'
-import { completeToolCalls } from '@/modules/utils/tool.ts'
 import { createManager } from './services/manager.ts'
 import {
   contentChunk,
   createSequenceMockClient,
+  finishChunk,
   toolCallChunk,
   usageChunk,
 } from './services/mock.ts'
@@ -14,84 +15,98 @@ import { tools } from './services/tool.ts'
 const toolCall = (id: string) => ({
   id,
   type: 'function' as const,
-  function: { name: 'f', arguments: '{}' },
+  function: { name: 'get_weather', arguments: '{"city":"北京"}' },
 })
 
-await runTest('未回填的工具调用应补齐', () => {
-  const messages: any[] = [
-    { role: 'user', content: 'x' },
-    { role: 'assistant', tool_calls: [toolCall('c1')] },
-  ]
+const createInterruptMockClient = (chunks: any[], stopAfter: number) => {
+  let manager: ReturnType<typeof createManager>
+  const client = {
+    chat: {
+      completions: {
+        create: async () => ({
+          [Symbol.asyncIterator]: async function* () {
+            for (const [i, chunk] of chunks.entries()) {
+              yield chunk
+              if (i === stopAfter) manager.stop()
+            }
+          },
+        }),
+      },
+    },
+  } as unknown as OpenAI
+  return {
+    client,
+    attach: (m: ReturnType<typeof createManager>) => (manager = m),
+  }
+}
 
-  completeToolCalls(messages)
+await runTest('残留未回填的工具调用应在 start 时补齐', async () => {
+  const { client, requests } = createSequenceMockClient([[contentChunk('好'), usageChunk(10)]])
+  const manager = createManager(client)
+  manager.updateTools(tools)
+  manager.messages.push({ role: 'user', content: '北京天气' })
+  manager.messages.push({ role: 'assistant', tool_calls: [toolCall('c1')] })
 
-  assert.deepEqual(messages[2], {
+  await manager.start()
+
+  assert.deepEqual(requests[0].messages[2], {
     role: 'tool',
-    content: '工具调用已被用户取消',
+    content: '工具调用已被取消',
     tool_call_id: 'c1',
   })
 })
 
-await runTest('部分回填时应补欠缺的', () => {
-  const messages: any[] = [
-    { role: 'user', content: 'x' },
-    { role: 'assistant', tool_calls: [toolCall('c1'), toolCall('c2')] },
-    { role: 'tool', content: 'r1', tool_call_id: 'c1' },
-  ]
+await runTest('部分回填时应在 start 时补欠缺的', async () => {
+  const { client, requests } = createSequenceMockClient([[contentChunk('好'), usageChunk(10)]])
+  const manager = createManager(client)
+  manager.updateTools(tools)
+  manager.messages.push({ role: 'user', content: '北京天气' })
+  manager.messages.push({ role: 'assistant', tool_calls: [toolCall('c1'), toolCall('c2')] })
+  manager.messages.push({ role: 'tool', content: '旧结果', tool_call_id: 'c1' })
 
-  completeToolCalls(messages)
+  await manager.start()
 
-  assert.equal(messages.length, 4)
-  assert.equal(messages[3].tool_call_id, 'c2')
+  const sent = requests[0].messages
+  assert.equal(sent[2].tool_call_id, 'c1')
+  assert.equal(sent[2].content, '旧结果', '已回填的应保持原样')
+  assert.deepEqual(sent[3], {
+    role: 'tool',
+    content: '工具调用已被取消',
+    tool_call_id: 'c2',
+  })
 })
 
-await runTest('已完整回填时不应改动', () => {
-  const messages: any[] = [
-    { role: 'user', content: 'x' },
-    { role: 'assistant', tool_calls: [toolCall('c1')] },
-    { role: 'tool', content: 'r1', tool_call_id: 'c1' },
-  ]
+await runTest('已完整回填时不应额外补齐', async () => {
+  const { client, requests } = createSequenceMockClient([[contentChunk('好'), usageChunk(10)]])
+  const manager = createManager(client)
+  manager.updateTools(tools)
+  manager.messages.push({ role: 'user', content: '北京天气' })
+  manager.messages.push({ role: 'assistant', tool_calls: [toolCall('c1')] })
+  manager.messages.push({ role: 'tool', content: '旧结果', tool_call_id: 'c1' })
 
-  completeToolCalls(messages)
+  await manager.start()
 
-  assert.equal(messages.length, 3)
+  assert.equal(requests[0].messages.filter((m: any) => m.role === 'tool').length, 1, '不应重复补齐')
 })
 
-await runTest('tool_calls 为空数组时不应改动', () => {
-  const messages: any[] = [
-    { role: 'user', content: 'x' },
-    { role: 'assistant', tool_calls: [] },
-  ]
+await runTest('多次 start 不应重复补齐', async () => {
+  const { client, requests } = createSequenceMockClient([
+    [contentChunk('第一次'), usageChunk(10)],
+    [contentChunk('第二次'), usageChunk(20)],
+  ])
+  const manager = createManager(client)
+  manager.updateTools(tools)
+  manager.messages.push({ role: 'user', content: '北京天气' })
+  manager.messages.push({ role: 'assistant', tool_calls: [toolCall('c1')] })
 
-  completeToolCalls(messages)
+  await manager.start()
+  await manager.start()
 
-  assert.equal(messages.length, 2)
-})
-
-await runTest('末尾为 user 时不应改动', () => {
-  const messages: any[] = [
-    { role: 'user', content: 'x' },
-    { role: 'assistant', tool_calls: [toolCall('c1')] },
-    { role: 'tool', content: 'r1', tool_call_id: 'c1' },
-    { role: 'user', content: 'y' },
-  ]
-
-  completeToolCalls(messages)
-
-  assert.equal(messages.length, 4)
-})
-
-await runTest('多次调用应幂等', () => {
-  const messages: any[] = [
-    { role: 'user', content: 'x' },
-    { role: 'assistant', tool_calls: [toolCall('c1')] },
-  ]
-
-  completeToolCalls(messages)
-  completeToolCalls(messages)
-  completeToolCalls(messages)
-
-  assert.equal(messages.length, 3)
+  assert.equal(
+    requests[1].messages.filter((m: any) => m.role === 'tool').length,
+    1,
+    '第二次 start 不应重复补齐',
+  )
 })
 
 await runTest('多工具执行中途 stop 后重新 start 应能继续', async () => {
@@ -128,4 +143,57 @@ await runTest('多工具执行中途 stop 后重新 start 应能继续', async (
     }
   }
   assert.equal(manager.messages[manager.messages.length - 1].content, '晴')
+})
+
+await runTest('tool_calls 未生成完时中断，不应写入 messages', async () => {
+  const { client, attach } = createInterruptMockClient(
+    [toolCallChunk('get_weather', '{"city":"北'), usageChunk(10)],
+    0,
+  )
+  const manager = createManager(client)
+  attach(manager)
+  manager.updateTools(tools)
+  manager.messages.push({ role: 'user', content: '北京天气' })
+
+  await manager.start()
+
+  assert.equal(manager.messages.length, 1, '半截 tool_calls 不应写入')
+})
+
+await runTest('tool_calls 生成完但未执行时中断，重启应补齐', async () => {
+  const { client, attach } = createInterruptMockClient(
+    [toolCallChunk('get_weather', '{"city":"北京"}'), finishChunk('tool_calls'), usageChunk(10)],
+    2,
+  )
+  const manager = createManager(client)
+  attach(manager)
+  manager.updateTools(tools)
+  manager.messages.push({ role: 'user', content: '北京天气' })
+
+  await manager.start()
+
+  assert.equal(manager.messages.length, 2, '完整 tool_calls 应写入')
+  assert.ok(manager.messages[1].tool_calls)
+  assert.equal(manager.messages.filter((m) => m.role === 'tool').length, 0, '工具应未执行')
+
+  await manager.start()
+
+  assert.equal(manager.messages.filter((m) => m.role === 'tool').length, 1, '重启时应补齐工具调用')
+})
+
+await runTest('半截 tool_calls 且有文本时，应保留文本并丢弃 tool_calls', async () => {
+  const { client, attach } = createInterruptMockClient(
+    [contentChunk('我来查'), toolCallChunk('get_weather', '{"city":"北'), usageChunk(10)],
+    1,
+  )
+  const manager = createManager(client)
+  attach(manager)
+  manager.updateTools(tools)
+  manager.messages.push({ role: 'user', content: '北京天气' })
+
+  await manager.start()
+
+  assert.equal(manager.messages.length, 2, '应只写入文本')
+  assert.equal(manager.messages[1].content, '我来查')
+  assert.ok(!manager.messages[1].tool_calls, '半截 tool_calls 应丢弃')
 })

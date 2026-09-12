@@ -135,10 +135,10 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             continue
           }
           onEvent.value?.({ type: 'tool_start', toolCall, turnCount })
-          const args = JSON.parse(toolCall.function.arguments) as Record<string, any>
           let result: any
           let success: boolean
           try {
+            const args = JSON.parse(toolCall.function.arguments) as Record<string, any>
             result = await executor(args, environment.value)
             success = true
           } catch (error: any) {

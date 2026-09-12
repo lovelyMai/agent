@@ -70,10 +70,14 @@ export const streamOut = async (
     stream: true,
     stream_options: { include_usage: true },
   })
+  let finished = false
   try {
     for await (const chunk of response) {
       if (!isRunning.value) {
         throw createError('主动停止', 200)
+      }
+      if (chunk.choices[0]?.finish_reason) {
+        finished = true
       }
       const delta = chunk.choices[0]?.delta as Delta | undefined
       if (delta?.content) {
@@ -100,8 +104,12 @@ export const streamOut = async (
             }
           }
           const target = accumulated.tool_calls[tc.index]
-          if (tc.id) target.id = tc.id
-          if (tc.function?.name) target.function.name = tc.function.name
+          if (tc.id) {
+            target.id = tc.id
+          }
+          if (tc.function?.name) {
+            target.function.name = tc.function.name
+          }
           if (tc.function?.arguments) {
             target.function.arguments += tc.function.arguments
           }
@@ -128,6 +136,9 @@ export const streamOut = async (
 
     return accumulated
   } catch (error: any) {
+    if (!finished) {
+      delete accumulated.tool_calls
+    }
     const hasContent =
       accumulated.content || accumulated.reasoning_content || accumulated.tool_calls?.length
     throw hasContent ? Object.assign(error, { accumulated }) : error
