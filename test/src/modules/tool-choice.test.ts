@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 
 import { runTest } from './utils/run.ts'
 import { createManager } from './services/manager.ts'
+import { createMockClient, toolCallChunk, usageChunk } from './services/mock.ts'
 import { tools } from './services/tool.ts'
 
 await runTest('tool_choice 默认值应为 auto', async () => {
@@ -55,13 +56,14 @@ await runTest('tool_choice 为工具名应强制调用指定工具', async () =>
 })
 
 await runTest('tool_choice 为工具名时模型调用其他工具应报错', async () => {
-  const manager = createManager()
+  const client = createMockClient([
+    toolCallChunk('calculate', '{"expression":"1+1"}'),
+    usageChunk(10),
+  ])
+  const manager = createManager(client)
   manager.updateTools(tools)
   manager.config.tool_choice = 'get_weather'
-  manager.messages.push({
-    role: 'user',
-    content: '不要调用 get_weather，请用 calculate 工具计算 1+1 的结果',
-  })
+  manager.messages.push({ role: 'user', content: '计算 1+1' })
 
   let toolStarted = false
   let agentError: any
@@ -73,13 +75,15 @@ await runTest('tool_choice 为工具名时模型调用其他工具应报错', as
   await manager.start()
   assert.ok(!toolStarted, '不应执行非指定工具')
   assert.ok(agentError, '模型调用非指定工具时应触发 agent_error')
+  assert.equal(agentError.code, 400, '应以 400 报错')
 })
 
 await runTest('tool_choice: none 时模型违规返回工具调用应报错', async () => {
-  const manager = createManager()
+  const client = createMockClient([toolCallChunk('get_weather', '{"city":"北京"}'), usageChunk(10)])
+  const manager = createManager(client)
   manager.updateTools(tools)
   manager.config.tool_choice = 'none'
-  manager.messages.push({ role: 'user', content: '调用 get_weather 工具查询北京天气' })
+  manager.messages.push({ role: 'user', content: '查询北京天气' })
 
   let toolStarted = false
   let agentError: any
@@ -91,4 +95,5 @@ await runTest('tool_choice: none 时模型违规返回工具调用应报错', as
   await manager.start()
   assert.ok(!toolStarted, 'tool_choice 为 none 时不应触发工具调用')
   assert.ok(agentError, '模型违规返回工具调用时应触发 agent_error')
+  assert.equal(agentError.code, 400, '应以 400 报错')
 })
