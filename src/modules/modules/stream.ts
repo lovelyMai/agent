@@ -7,6 +7,7 @@ import type {
   ChatCompletionToolChoiceOption,
 } from 'openai/resources/chat/completions'
 
+import { findPrefillIndex } from '../utils/assistant.ts'
 import { createError } from '../utils/error.ts'
 
 export type StreamConfig = {
@@ -46,37 +47,43 @@ export const streamOut = async (
   onChunk: (text: { content: string } | { reasoning_content: string }) => void,
   isRunning: Ref<boolean>,
 ): Promise<Accumulated> => {
+  const messages = [...config.messages]
+  const prefillIndex = findPrefillIndex(messages)
+  const prefillContent = messages[prefillIndex]?.content
   const accumulated: Accumulated = {
     role: 'assistant',
-    content: '',
+    content: typeof prefillContent === 'string' ? prefillContent : '',
     reasoning_content: '',
     tool_calls: [],
     usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
   }
-  try {
-    const response = await client.chat.completions.create({
-      ...config,
-      stream: true,
-      stream_options: { include_usage: true },
+  if (prefillIndex !== -1) {
+    messages.splice(prefillIndex, 0, {
+      role: 'system',
+      content: '直接续写最后一条 assistant 消息，不要重复已有内容，不要解释',
     })
+  }
 
+  const response = await client.chat.completions.create({
+    ...config,
+    messages,
+    stream: true,
+    stream_options: { include_usage: true },
+  })
+  try {
     for await (const chunk of response) {
       if (!isRunning.value) {
         throw createError('主动停止', 200)
       }
-
-      const delta = chunk.choices[0]?.delta as Delta
-
+      const delta = chunk.choices[0]?.delta as Delta | undefined
       if (delta?.content) {
         accumulated.content += delta.content
         onChunk({ content: delta.content })
       }
-
       if (delta?.reasoning_content) {
         accumulated.reasoning_content += delta.reasoning_content
         onChunk({ reasoning_content: delta.reasoning_content })
       }
-
       if (delta?.tool_calls) {
         for (const tc of delta.tool_calls) {
           if (!accumulated.tool_calls?.[tc.index]) {
@@ -100,7 +107,6 @@ export const streamOut = async (
           }
         }
       }
-
       if (chunk.usage) {
         accumulated.usage = chunk.usage
       }
@@ -122,7 +128,9 @@ export const streamOut = async (
 
     return accumulated
   } catch (error: any) {
-    throw Object.assign(error, { accumulated })
+    const hasContent =
+      accumulated.content || accumulated.reasoning_content || accumulated.tool_calls?.length
+    throw hasContent ? Object.assign(error, { accumulated }) : error
   } finally {
     if (accumulated.tool_calls?.length === 0) {
       delete accumulated.tool_calls

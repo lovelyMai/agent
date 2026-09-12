@@ -2,6 +2,9 @@ import { computed, reactive, ref, shallowRef } from '@vue/reactivity'
 import type OpenAI from 'openai'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
+import { addAssistant } from './utils/assistant.ts'
+import { completeToolCalls } from './utils/tool.ts'
+
 import { streamOut, type StreamConfig } from './modules/stream.ts'
 import { generateTools, type Tool, type ToolDefinition } from './modules/tool.ts'
 
@@ -89,6 +92,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
   const usage = ref<number>(0)
 
   const start = async () => {
+    completeToolCalls(messages.value)
     isRunning.value = true
     onEvent.value?.({ type: 'agent_start' })
     let turnCount: number = 1
@@ -116,12 +120,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           ...message
         } = accumulated
         usage.value = total_tokens
-        const lastMessage = messages.value[messages.value.length - 1]
-        if (lastMessage.role === 'assistant') {
-          messages.value[messages.value.length - 1] = message
-        } else {
-          messages.value.push(message)
-        }
+        addAssistant(messages.value, message)
 
         if (!accumulated.tool_calls) return
         for (const toolCall of accumulated.tool_calls) {
@@ -164,12 +163,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           ...message
         } = error.accumulated
         usage.value = total_tokens
-        const lastMessage = messages.value[messages.value.length - 1]
-        if (lastMessage.role === 'assistant') {
-          messages.value[messages.value.length - 1] = message
-        } else {
-          messages.value.push(message)
-        }
+        addAssistant(messages.value, message)
       }
       if (error.code === 200) return
       onEvent.value?.({ type: 'agent_error', error, turnCount })

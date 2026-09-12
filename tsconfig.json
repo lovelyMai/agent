@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-    "lib": ["ES2022"],
+    "lib": ["ES2024"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "strict": true,
-    "noImplicitAny": false,
     "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"],

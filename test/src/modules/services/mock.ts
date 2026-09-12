@@ -40,3 +40,57 @@ export const usageChunk = (totalTokens: number): MockChunk => ({
     total_tokens: totalTokens,
   },
 })
+
+export const contentChunk = (text: string): MockChunk => ({
+  choices: [{ delta: { content: text } }],
+})
+
+export const reasoningChunk = (text: string): MockChunk => ({
+  choices: [{ delta: { reasoning_content: text } }],
+})
+
+export const createSequenceMockClient = (calls: MockChunk[][]) => {
+  const requests: any[] = []
+  let index = 0
+  const client = {
+    chat: {
+      completions: {
+        create: async (params: any) => {
+          requests.push(params)
+          const chunks = calls[index++] ?? []
+          return {
+            [Symbol.asyncIterator]: async function* () {
+              for (const chunk of chunks) yield chunk
+            },
+          }
+        },
+      },
+    },
+  } as unknown as OpenAI
+  return { client, requests }
+}
+
+export const createFailingMockClient = (error: Error, chunks: MockChunk[] = []) =>
+  ({
+    chat: {
+      completions: {
+        create: async () => ({
+          [Symbol.asyncIterator]: async function* () {
+            for (const chunk of chunks) yield chunk
+            throw error
+          },
+        }),
+      },
+    },
+  }) as unknown as OpenAI
+
+export const createRejectingMockClient = (error: Error) =>
+  ({
+    chat: {
+      completions: {
+        create: async () => {
+          throw error
+        },
+      },
+    },
+  }) as unknown as OpenAI
