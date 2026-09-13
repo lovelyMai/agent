@@ -15,6 +15,8 @@ type Property = {
   items?: Property
   properties?: Record<string, Property>
   enum?: JsonSchemaValue[]
+  minimum?: number
+  maximum?: number
   minItems?: number
   maxItems?: number
 }

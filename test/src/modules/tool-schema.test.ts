@@ -164,3 +164,70 @@ await runTest('嵌套必填 schema 端到端调用', async () => {
   assert.ok(eventTypes.includes('tool_start'), '预期触发 tool_start')
   assert.ok(eventTypes.includes('tool_end'), '预期触发 tool_end')
 })
+
+await runTest('数值约束透传为 minimum 和 maximum', () => {
+  const parameters = toParameters({
+    name: 'get_more_messages',
+    description: '获取更多消息',
+    properties: {
+      before: {
+        type: 'integer',
+        description: '往前再取多少条',
+        minimum: 0,
+        maximum: 5,
+        required: true,
+      },
+      radius: { type: 'number', description: '半径', minimum: 1.5 },
+    },
+    function: () => null,
+  })
+  assert.deepEqual(parameters.properties.before, {
+    type: 'integer',
+    description: '往前再取多少条',
+    minimum: 0,
+    maximum: 5,
+  })
+  assert.deepEqual(parameters.properties.radius, {
+    type: 'number',
+    description: '半径',
+    minimum: 1.5,
+  })
+})
+
+await runTest('嵌套结构的数值约束同样透传', () => {
+  const parameters = toParameters({
+    name: 'plan_route',
+    description: '规划路线',
+    properties: {
+      stops: {
+        type: 'array',
+        description: '途经点',
+        required: true,
+        minItems: 1,
+        maxItems: 5,
+        items: {
+          type: 'object',
+          description: '途经点',
+          properties: {
+            stay: { type: 'integer', description: '停留分钟', minimum: 1, maximum: 120 },
+          },
+        },
+      },
+    },
+    function: () => null,
+  })
+  assert.deepEqual(parameters.properties.stops, {
+    type: 'array',
+    description: '途经点',
+    minItems: 1,
+    maxItems: 5,
+    items: {
+      type: 'object',
+      description: '途经点',
+      properties: {
+        stay: { type: 'integer', description: '停留分钟', minimum: 1, maximum: 120 },
+      },
+      required: [],
+    },
+  })
+})
