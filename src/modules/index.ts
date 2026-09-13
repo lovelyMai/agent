@@ -113,7 +113,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
           (text: { content?: string } | { reasoning_content?: string }) => {
             onEvent.value?.({ type: 'message_update', text, turnCount })
           },
-          isRunning,
+          () => isRunning.value,
         )
         const {
           usage: { total_tokens },

@@ -1,4 +1,3 @@
-import type { Ref } from '@vue/reactivity'
 import type OpenAI from 'openai'
 import type {
   ChatCompletionMessageParam,
@@ -45,7 +44,7 @@ export const streamOut = async (
   client: OpenAI,
   config: StreamConfig,
   onChunk: (text: { content: string } | { reasoning_content: string }) => void,
-  isRunning: Ref<boolean>,
+  checkStatus: () => boolean,
 ): Promise<Accumulated> => {
   const messages = [...config.messages]
   const prefillIndex = findPrefillIndex(messages)
@@ -73,7 +72,7 @@ export const streamOut = async (
   let finished = false
   try {
     for await (const chunk of response) {
-      if (!isRunning.value) {
+      if (!checkStatus()) {
         throw createError('主动停止', 200)
       }
       if (chunk.choices[0]?.finish_reason) {
