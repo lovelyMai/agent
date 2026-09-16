@@ -98,6 +98,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
     let turnCount: number = 1
     try {
       for (let i = 1; i <= maxIteration.value; i++) {
+        if (!isRunning.value) return
         turnCount = i
         onEvent.value?.({ type: 'turn_start', turnCount })
         const filteredMessages = messages.value.filter((message) =>
@@ -123,38 +124,39 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
         addAssistant(messages.value, message)
 
         if (!accumulated.tool_calls) return
-        for (const toolCall of accumulated.tool_calls) {
-          if (!isRunning.value) return
-          const executor = toolExecutors.value[toolCall.function.name]
-          if (!executor) {
+        if (!isRunning.value) return
+        await Promise.all(
+          accumulated.tool_calls.map(async (toolCall) => {
+            const executor = toolExecutors.value[toolCall.function.name]
+            if (!executor) {
+              messages.value.push({
+                role: 'tool',
+                content: '工具不存在',
+                tool_call_id: toolCall.id,
+              })
+              return
+            }
+            onEvent.value?.({ type: 'tool_start', toolCall, turnCount })
+            let result: any
+            let success: boolean
+            try {
+              const args = JSON.parse(toolCall.function.arguments) as Record<string, any>
+              result = await executor(args, environment.value)
+              success = true
+            } catch (error: any) {
+              result = error instanceof Error ? error.message : error
+              success = false
+            }
+            result = typeof result === 'string' ? result : JSON.stringify(result)
             messages.value.push({
               role: 'tool',
-              content: '工具不存在',
+              content: result,
               tool_call_id: toolCall.id,
             })
-            continue
-          }
-          onEvent.value?.({ type: 'tool_start', toolCall, turnCount })
-          let result: any
-          let success: boolean
-          try {
-            const args = JSON.parse(toolCall.function.arguments) as Record<string, any>
-            result = await executor(args, environment.value)
-            success = true
-          } catch (error: any) {
-            result = error instanceof Error ? error.message : error
-            success = false
-          }
-          result = typeof result === 'string' ? result : JSON.stringify(result)
-          messages.value.push({
-            role: 'tool',
-            content: result,
-            tool_call_id: toolCall.id,
-          })
-          onEvent.value?.({ type: 'tool_end', toolCall, success, turnCount })
-        }
+            onEvent.value?.({ type: 'tool_end', toolCall, success, turnCount })
+          }),
+        )
         onEvent.value?.({ type: 'turn_end', turnCount })
-        if (!isRunning.value) return
       }
     } catch (error: any) {
       if (error.accumulated) {

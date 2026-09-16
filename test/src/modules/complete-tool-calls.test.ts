@@ -128,7 +128,11 @@ await runTest('多工具执行中途 stop 后重新 start 应能继续', async (
   await manager.start()
   manager.onEvent = undefined
 
-  assert.equal(manager.messages.filter((m) => m.role === 'tool').length, 1, '第二个工具应未执行')
+  assert.equal(
+    manager.messages.filter((m) => m.role === 'tool').length,
+    2,
+    '同一批工具会并行执行完，stop 不拦截已启动的',
+  )
 
   await manager.start()
 

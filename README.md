@@ -23,7 +23,7 @@ const agent = createAgentManager(client)
 ## 第三步：配置模型与消息
 
 ```typescript
-agent.config = { model: 'deepseek-v4-flash', thinking: { type: 'disabled' } }
+agent.config = { model: 'deepseek-v4-flash', reasoning_effort: 'none' }
 agent.messages.push({ role: 'user', content: '你好' })
 ```
 
@@ -60,15 +60,15 @@ agent.onEvent = (event) => {
 
 支持的事件类型：
 
-| 事件             | 说明                                                |
-| ---------------- | --------------------------------------------------- |
-| `agent_start`    | Agent 开始运行                                      |
-| `turn_start`     | 每轮对话开始                                       |
-| `message_update` | 流式输出更新                                       |
-| `tool_start`     | 工具开始执行                                        |
-| `tool_end`       | 工具执行完成                                        |
-| `agent_end`      | Agent 运行结束                                      |
-| `agent_error`    | Agent 运行出错                                      |
+| 事件             | 说明           |
+| ---------------- | -------------- |
+| `agent_start`    | Agent 开始运行 |
+| `turn_start`     | 每轮对话开始   |
+| `message_update` | 流式输出更新   |
+| `tool_start`     | 工具开始执行   |
+| `tool_end`       | 工具执行完成   |
+| `agent_end`      | Agent 运行结束 |
+| `agent_error`    | Agent 运行出错 |
 
 ## 第六步：启动与停止
 

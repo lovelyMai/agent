@@ -14,6 +14,6 @@ const createClient = () =>
 export const createManager = (client: OpenAI = createClient()) => {
   const manager = createAgentManager(client)
   manager.config.model = AI_CONFIG.model
-  manager.config.thinking = { type: 'disabled' }
+  manager.config.reasoning_effort = 'none'
   return manager
 }
