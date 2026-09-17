@@ -1,7 +1,7 @@
 import { computed, reactive, ref, shallowRef } from '@vue/reactivity'
 import type OpenAI from 'openai'
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
+import type { Message } from '../types/index.ts'
 import { addAssistant } from './utils/assistant.ts'
 import { completeToolCalls } from './utils/tool.ts'
 
@@ -17,7 +17,7 @@ export type AgentManager = {
   /** 模型配置 */
   config: Config
   /** 消息数组 */
-  messages: (ChatCompletionMessageParam & { [key: string]: any })[]
+  messages: Message[]
   /** 最大迭代次数 */
   maxIteration: number
   /** 环境参数对象，赋值给工具函数的第二个参数 */
@@ -72,7 +72,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
       }
     }
   })
-  const messages = ref<(ChatCompletionMessageParam & { [key: string]: any })[]>([])
+  const messages = ref<Message[]>([])
 
   // 工具
   const toolDefinitions = ref<ToolDefinition[]>([])
@@ -102,7 +102,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
         turnCount = i
         onEvent.value?.({ type: 'turn_start', turnCount })
         const filteredMessages = messages.value.filter((message) =>
-          ['system', 'user', 'assistant', 'tool'].includes(message.role),
+          ['system', 'user', 'assistant', 'tool'].includes(message.role as string),
         )
         const accumulated = await streamOut(
           client,
@@ -131,6 +131,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             if (!executor) {
               messages.value.push({
                 role: 'tool',
+                name: toolCall.function.name,
                 content: '工具不存在',
                 tool_call_id: toolCall.id,
               })
@@ -150,6 +151,7 @@ export const createAgentManager = (client: OpenAI): AgentManager => {
             result = typeof result === 'string' ? result : JSON.stringify(result)
             messages.value.push({
               role: 'tool',
+              name: toolCall.function.name,
               content: result,
               tool_call_id: toolCall.id,
             })

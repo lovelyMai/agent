@@ -1,8 +1,4 @@
-import { ChatCompletionMessageParam } from 'openai/resources'
-
-type Message = ChatCompletionMessageParam & {
-  reasoning_content?: string | null
-}
+import { Message } from '../../types/index.ts'
 
 export const findPrefillIndex = (messages: Message[]) => {
   for (let i = messages.length - 1; i >= 0; i--) {

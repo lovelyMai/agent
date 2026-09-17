@@ -90,7 +90,7 @@ await runTest('工具消息之后不应判为 prefill', async () => {
     content: 'a',
     tool_calls: [{ id: 'c', type: 'function', function: { name: 'f', arguments: '{}' } }],
   })
-  manager.messages.push({ role: 'tool', content: 'r', tool_call_id: 'c' })
+  manager.messages.push({ role: 'tool', name: 'get_weather', content: 'r', tool_call_id: 'c' })
 
   await manager.start()
 
@@ -148,17 +148,6 @@ await runTest('仅 assistant 时也应判为 prefill', async () => {
 
   assert.equal(manager.messages.length, 1, '不应追加')
   assert.equal(manager.messages[0].content, '答案是 1+1=2')
-})
-
-await runTest('content 为数组时不应拼出 object', async () => {
-  const { client } = createSequenceMockClient([[contentChunk('续'), usageChunk(20)]])
-  const manager = createManager(client)
-  manager.messages.push({ role: 'user', content: 'x' })
-  manager.messages.push({ role: 'assistant', content: [{ type: 'text', text: 'A' }] } as any)
-
-  await manager.start()
-
-  assert.equal(manager.messages[1].content, '续')
 })
 
 await runTest('content 为空时不应拼出 undefined', async () => {

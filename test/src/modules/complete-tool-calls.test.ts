@@ -51,6 +51,7 @@ await runTest('残留未回填的工具调用应在 start 时补齐', async () =
 
   assert.deepEqual(requests[0].messages[2], {
     role: 'tool',
+    name: 'get_weather',
     content: '工具调用已被取消',
     tool_call_id: 'c1',
   })
@@ -62,7 +63,12 @@ await runTest('部分回填时应在 start 时补欠缺的', async () => {
   manager.updateTools(tools)
   manager.messages.push({ role: 'user', content: '北京天气' })
   manager.messages.push({ role: 'assistant', tool_calls: [toolCall('c1'), toolCall('c2')] })
-  manager.messages.push({ role: 'tool', content: '旧结果', tool_call_id: 'c1' })
+  manager.messages.push({
+    role: 'tool',
+    name: 'get_weather',
+    content: '旧结果',
+    tool_call_id: 'c1',
+  })
 
   await manager.start()
 
@@ -71,6 +77,7 @@ await runTest('部分回填时应在 start 时补欠缺的', async () => {
   assert.equal(sent[2].content, '旧结果', '已回填的应保持原样')
   assert.deepEqual(sent[3], {
     role: 'tool',
+    name: 'get_weather',
     content: '工具调用已被取消',
     tool_call_id: 'c2',
   })
@@ -82,7 +89,12 @@ await runTest('已完整回填时不应额外补齐', async () => {
   manager.updateTools(tools)
   manager.messages.push({ role: 'user', content: '北京天气' })
   manager.messages.push({ role: 'assistant', tool_calls: [toolCall('c1')] })
-  manager.messages.push({ role: 'tool', content: '旧结果', tool_call_id: 'c1' })
+  manager.messages.push({
+    role: 'tool',
+    name: 'get_weather',
+    content: '旧结果',
+    tool_call_id: 'c1',
+  })
 
   await manager.start()
 

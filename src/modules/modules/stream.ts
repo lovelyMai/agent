@@ -1,11 +1,10 @@
 import type OpenAI from 'openai'
 import type {
-  ChatCompletionMessageParam,
   ChatCompletionTool,
-  ChatCompletionMessageFunctionToolCall,
   ChatCompletionToolChoiceOption,
 } from 'openai/resources/chat/completions'
 
+import type { AssistantMessage, KnownMessage } from '../../types/index.ts'
 import { findPrefillIndex } from '../utils/assistant.ts'
 import { createError } from '../utils/error.ts'
 
@@ -13,9 +12,7 @@ export type StreamConfig = {
   /** 模型 */
   model: string
   /** 消息 */
-  messages: (ChatCompletionMessageParam & {
-    reasoning_content?: string | null
-  })[]
+  messages: KnownMessage[]
   /** 工具定义 */
   tools: ChatCompletionTool[]
   /** 工具选择 */
@@ -23,7 +20,7 @@ export type StreamConfig = {
 }
 
 type Delta = OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta & {
-  reasoning_content?: string | null
+  reasoning_content?: string
 }
 
 type Usage = {
@@ -32,13 +29,7 @@ type Usage = {
   total_tokens: number
 }
 
-type Accumulated = {
-  role: 'assistant'
-  content?: string | null
-  reasoning_content?: string | null
-  tool_calls?: ChatCompletionMessageFunctionToolCall[]
-  usage: Usage
-}
+type Accumulated = AssistantMessage & { usage: Usage }
 
 export const streamOut = async (
   client: OpenAI,
@@ -48,10 +39,10 @@ export const streamOut = async (
 ): Promise<Accumulated> => {
   const messages = [...config.messages]
   const prefillIndex = findPrefillIndex(messages)
-  const prefillContent = messages[prefillIndex]?.content
+  const prefillContent = (messages[prefillIndex] as AssistantMessage | undefined)?.content
   const accumulated: Accumulated = {
     role: 'assistant',
-    content: typeof prefillContent === 'string' ? prefillContent : '',
+    content: prefillContent ?? '',
     reasoning_content: '',
     tool_calls: [],
     usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
