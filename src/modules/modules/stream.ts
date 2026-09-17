@@ -4,7 +4,7 @@ import type {
   ChatCompletionToolChoiceOption,
 } from 'openai/resources/chat/completions'
 
-import type { AssistantMessage, KnownMessage } from '../../types/index.ts'
+import type { AssistantMessage, KnownMessage } from '@/types/index.ts'
 import { findPrefillIndex } from '../utils/assistant.ts'
 import { createError } from '../utils/error.ts'
 

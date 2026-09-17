@@ -1,4 +1,4 @@
-import { Message } from '../../types/index.ts'
+import type { Message } from '@/types/index.ts'
 
 export const findPrefillIndex = (messages: Message[]) => {
   for (let i = messages.length - 1; i >= 0; i--) {

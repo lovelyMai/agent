@@ -1,4 +1,4 @@
-import { ChatCompletionMessageFunctionToolCall } from 'openai/resources'
+import type { ChatCompletionMessageFunctionToolCall } from 'openai/resources'
 
 export type SystemMessage = {
   role: 'system'

@@ -1,4 +1,4 @@
-import { AssistantMessage, Message } from '@/types/index.ts'
+import type { AssistantMessage, Message } from '@/types/index.ts'
 
 export const completeToolCalls = (messages: Message[]) => {
   for (let i = messages.length - 1; i >= 0; i--) {

@@ -1,7 +1,7 @@
 import { computed, reactive, ref, shallowRef } from '@vue/reactivity'
 import type OpenAI from 'openai'
 
-import type { Message } from '../types/index.ts'
+import type { Message } from '@/types/index.ts'
 import { addAssistant } from './utils/assistant.ts'
 import { completeToolCalls } from './utils/tool.ts'
 
